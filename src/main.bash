@@ -7,16 +7,31 @@ if [[ -z $IDE_SERVER_PORT ]]; then
 fi
 
 request() {
-     jq -c |nc localhost "$IDE_SERVER_PORT"
+    jq -c |nc localhost "$IDE_SERVER_PORT"
 }
 
 build_add_import() {
     local file="$1"
-    local identifier="$2"
+    local identifier="${2:-}"
     local qualifier="${3:-}"
     local module="${4:-}"
 
-    cat <<EOF |add_qualifier "$qualifier" |add_filters "$module"
+    if [[ -n $module && -n $qualifier ]]; then
+        cat <<EOF
+{
+    "command": "import",
+    "params": {
+        "file": "$file",
+        "outfile": "$file",
+        "importCommand": {
+            "importCommand": "addQualifiedImport",
+            "module": "$module",
+            "qualifier": "$qualifier"
+        }}
+}
+EOF
+    else
+        cat <<EOF |add_qualifier "$qualifier" |add_filters "$module"
 {
     "command": "import",
     "params": {
@@ -29,6 +44,7 @@ build_add_import() {
     }
 }
 EOF
+    fi
 }
 
 add_qualifier() {
@@ -73,11 +89,15 @@ parse_result() {
     res="$(jq)"
     if [[ $(echo $res | jq ".result") =~ Written ]]; then
         echo
-    else
+    elif  echo "$res" |jq -r ".result[0].module" 2>&1 >/dev/null; then
         echo "$res" |jq -r ".result[].module"
+    else
+        echo "$res" |jq -r ".result[]"
     fi
 }
 
+declare -a args
+declare -A opts
 parse_args "$@"
 
 if [[ -n $(lookup_opt version) ]]; then
