@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -au
+
+VERSION="${VERSION:-0.0.0}"
+IMPORT_PATH="${IMPORT_PATH:-$(cd "$(dirname $0)" && pwd)}"
+
+import() {
+    source "$IMPORT_PATH/$1"
+}
+
+exec bash "$IMPORT_PATH/main.bash" "$@"
