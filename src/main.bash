@@ -87,12 +87,16 @@ EOF
 parse_result() {
     local res
     res="$(jq)"
-    if [[ $(echo $res | jq ".result") =~ Written ]]; then
-        echo
-    elif  echo "$res" |jq -r ".result[0].module" 2>&1 >/dev/null; then
-        echo "$res" |jq -r ".result[].module"
-    else
-        echo "$res" |jq -r ".result[]"
+    if echo "$res" | jq ".resultType" 2>&1 >/dev/null; then
+        if [[ $(echo "$res" | jq -r ".resultType") != success ]]; then
+            die "$(echo "$res" | jq -r ".result")"
+        elif [[ $(echo $res | jq ".result") =~ Written ]]; then
+            echo
+        elif echo "$res" | jq -r ".result[0].module" 2>&1 >/dev/null; then
+            echo "$res" | jq -r ".result[].module"
+        else
+            echo "$res" | jq -r ".result[]"
+        fi
     fi
 }
 
