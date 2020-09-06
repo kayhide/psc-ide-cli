@@ -5,9 +5,7 @@ die() {
         >&2 echo "$1"
     fi
     if [[ ! -t 0 ]]; then
-        while read -r line; do
-            >&2 echo "$line"
-        done
+        >&2 cat
     fi
     exit 1
 }
