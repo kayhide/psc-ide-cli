@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+set -eu
+
+find_ide_server_pid() {
+    ps -eo pid,cmd | sed -n "s/^ *\([0-9]\+\).*purs ide .*--port 0/\1/p" | grep "^[0-9]\+*$"
+}
+
+find_ide_server_port() {
+    if [[ -n ${1+x} && -n $1 ]]; then
+        lsof -p "$1" 2> /dev/null | grep LISTEN | sed "s/.*TCP.*:\([0-9]\+\).*/\1/"
+    else
+        echo
+    fi
+}
+
+start_ide_server() {
+    pushd test/fixtures/spago-project > /dev/null
+    purs ide server --port 0 &
+    popd > /dev/null
+}
+
+detect() {
+    local force=false
+    if [[ ${1:-} == force ]]; then
+        force=true
+    fi
+    if "$force" || [[ -z ${IDE_SERVER_PID+x} ]]; then
+        IDE_SERVER_PID="$(find_ide_server_pid || echo)"
+    fi
+    if "$force" || [[ -z ${IDE_SERVER_PORT+x} ]]; then
+        IDE_SERVER_PORT="$(find_ide_server_port "$IDE_SERVER_PID" || echo)"
+    fi
+}
+
+up() {
+    detect
+    if [[ -z $IDE_SERVER_PORT ]]; then
+        echo "IDE server is not running."
+        echo "Starting..."
+        start_ide_server
+        while true; do
+            detect force
+            if [[ -n $IDE_SERVER_PORT ]]; then
+                echo "Done."
+                echo
+                status
+                exit
+            fi
+
+            echo "Starting..."
+            sleep 1
+        done
+    else
+        status
+    fi
+}
+
+down() {
+    detect
+    if [[ -z $IDE_SERVER_PID ]]; then
+        status
+    else
+        echo "IDE server is running."
+        echo "Stopping..."
+        kill "$IDE_SERVER_PID"
+        while true; do
+            detect force
+            if [[ -z $IDE_SERVER_PID ]]; then
+                echo "Done."
+                exit
+            fi
+
+            echo "Stopping..."
+            sleep 1
+        done
+    fi
+}
+
+status() {
+    detect
+    if [[ -z $IDE_SERVER_PORT ]]; then
+        echo "IDE server is not running."
+    else
+        cat <<EOF
+IDE server is running.
+PID: $IDE_SERVER_PID
+Port: $IDE_SERVER_PORT
+
+EOF
+    fi
+}
+
+pid() {
+    find_ide_server_pid
+}
+
+port() {
+    detect
+    echo "$IDE_SERVER_PORT"
+}
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0")
+
+Availbale commands:
+  up
+  down
+  status
+  pid
+  port
+EOF
+}
+
+case ${1:-} in
+    up|down|status|pid|port) "$1";;
+    "") usage;;
+esac
+

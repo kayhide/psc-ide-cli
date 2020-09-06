@@ -1,6 +1,6 @@
-import prelude.bash
+source prelude.bash
 
-IDE_SERVER_PORT="$(ps -eo cmd |sed -n "s/.*-p \([0-9]\+\).*/\1/p")"
+IDE_SERVER_PORT="${PSC_IDE_SERVER_PORT:-$(ps -eo cmd |sed -n "s/.*purs ide .*\(-p\|--port\) \+\([0-9]\+\).*/\2/p")}"
 
 if [[ -z $IDE_SERVER_PORT ]]; then
     die "IDE server is not running"

@@ -33,7 +33,7 @@ stdenv.mkDerivation rec {
     mv $out/src/psc-ide-cli $out/bin
     wrapProgram $out/bin/psc-ide-cli \
       --set VERSION '${version}' \
-      --set IMPORT_PATH $out/src \
+      --set SRC_PATH $out/src \
       --prefix PATH : $bash/bin \
       --prefix PATH : $coreutils/bin \
       --prefix PATH : $gnugrep/bin \
