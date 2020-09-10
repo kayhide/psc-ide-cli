@@ -1,9 +1,11 @@
 source prelude.bash
 
-IDE_SERVER_PORT="${PSC_IDE_SERVER_PORT:-$(ps -eo cmd |sed -n "s/.*purs ide .*\(-p\|--port\) \+\([0-9]\+\).*/\2/p")}"
+IDE_SERVER_PORT="${PSC_IDE_SERVER_PORT:-$(ps -eo cmd |sed -n "s/.*purs ide .*\(-p\|--port\) \+\([0-9]\+\).*/\2/p" |grep -v "^0$")}"
 
 if [[ -z $IDE_SERVER_PORT ]]; then
     die "IDE server is not running"
+elif (( 1 < $(echo "$IDE_SERVER_PORT" |wc -l) )); then
+    die "More than one IDE server is running"
 fi
 
 request() {
