@@ -22,7 +22,6 @@ build_add_import() {
     "command": "import",
     "params": {
         "file": "$file",
-        "outfile": "$file",
         "importCommand": {
             "importCommand": "addQualifiedImport",
             "module": "$module",
@@ -36,7 +35,6 @@ EOF
     "command": "import",
     "params": {
         "file": "$file",
-        "outfile": "$file",
         "importCommand": {
             "importCommand": "addImport",
             "identifier": "$identifier"
@@ -87,13 +85,14 @@ EOF
 parse_result() {
     local res
     res="$(jq)"
-    if echo "$res" | jq ".resultType" 2>&1 >/dev/null; then
+    if echo "$res" | jq ".resultType" >/dev/null 2>&1; then
         if [[ $(echo "$res" | jq -r ".resultType") != success ]]; then
             die "$(echo "$res" | jq -r ".result")"
         elif [[ $(echo $res | jq ".result") =~ Written ]]; then
             echo
-        elif echo "$res" | jq -r ".result[0].module" 2>&1 >/dev/null; then
+        elif echo "$res" | jq -r ".result[0].module" >/dev/null 2>&1; then
             echo "$res" | jq -r ".result[].module"
+            exit 2
         else
             echo "$res" | jq -r ".result[]"
         fi
